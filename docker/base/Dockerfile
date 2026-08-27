@@ -21,19 +21,22 @@ RUN set -x \
 		lib32stdc++6 \
 		lib32gcc-s1 \
 		ca-certificates \
-		# nano \
-		# curl \
-		# locales \
+		curl \
+		iproute2 \
+		nano \
+		procps \
 		steamcmd \
 		vim \
   && useradd -ms /bin/bash ${USER}
 
-# USER ${USER}
-COPY worlds/. /home/steam/.config/unity3d/IronGate/Valheim/worlds/
+USER ${USER}
+COPY worlds/. /home/steam/.config/unity3d/IronGate/Valheim/worlds_local/
 WORKDIR /home/${USER}
-# RUN set -x \
-#   && touch iamherenow \
-# 	&& "$STEAMCMDDIR" +force_install_dir "$STEAMAPPDIR" +login anonymous +app_update "$STEAMAPPID" +quit
+RUN set -x \
+  && touch iamherenow \
+  && "$STEAMCMDDIR" +force_install_dir "$STEAMAPPDIR" +login anonymous +app_update "$STEAMAPPID" +quit
+COPY start_server.sh ${STEAMAPPDIR}/start_server.sh
+RUN chmod +x ${STEAMAPPDIR}/start_server.sh
 
 # EXPOSE 2456/tcp \
 # 	2456/udp \

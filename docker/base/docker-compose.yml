@@ -6,4 +6,4 @@ services:
     container_name: valheim-server
     tty: true
     ports:
-      - "2456-2457:2456-2457/udp"
+      - "2456-2458:2456-2458/udp"
