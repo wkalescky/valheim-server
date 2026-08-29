@@ -33,7 +33,9 @@ USER ${USER}
 COPY worlds/. /home/steam/.config/unity3d/IronGate/Valheim/worlds_local/
 WORKDIR /home/${USER}
 RUN set -x \
-  && "$STEAMCMDDIR" +quit \
+  && "$STEAMCMDDIR" +quit
+
+RUN set -x \
   && "$STEAMCMDDIR" +force_install_dir "$STEAMAPPDIR" +login anonymous +app_update "$STEAMAPPID" validate +quit
 COPY --chmod=755 start_server.sh ${STEAMAPPDIR}/start_server.sh
 

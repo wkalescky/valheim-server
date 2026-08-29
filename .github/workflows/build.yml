@@ -2,9 +2,9 @@ name: Build Docker Image
 
 on:
   push:
-    branches: [main]
+    branches: [main, github-build-workflow]
   pull_request:
-    branches: [main]
+    branches: [main, github-build-workflow]
 
 jobs:
   build:
