@@ -36,11 +36,7 @@ RUN set -x \
   && "$STEAMCMDDIR" +quit
 
 RUN set -x \
-  && for i in 1 2 3 4 5; do \
-       "$STEAMCMDDIR" +login anonymous +force_install_dir "$STEAMAPPDIR" +app_update "$STEAMAPPID" validate +quit \
-       && break \
-       || (echo "SteamCMD attempt $i failed, retrying in 30s..." && sleep 30); \
-     done
+	"$STEAMCMDDIR" +force_install_dir "$STEAMAPPDIR" +login anonymous +app_update "$STEAMAPPID" validate +quit \
 COPY --chmod=755 start_server.sh ${STEAMAPPDIR}/start_server.sh
 
 # EXPOSE 2456/tcp \
