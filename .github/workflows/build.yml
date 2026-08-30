@@ -37,5 +37,6 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/valheim-base:${{ github.ref_name == 'main' && 'latest' || 'test' }}
             ghcr.io/${{ github.repository_owner }}/valheim-base:${{ github.sha }}
+          provenance: mode=min
           cache-from: type=gha
           cache-to: type=gha,mode=max
