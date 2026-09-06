@@ -135,6 +135,20 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+resource "aws_iam_role_policy" "ecs_task_execution_secrets" {
+  name = "secrets-read"
+  role = aws_iam_role.ecs_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["secretsmanager:GetSecretValue"]
+      Resource = aws_secretsmanager_secret.cf_api_token.arn
+    }]
+  })
+}
+
 resource "aws_iam_role" "ecs_task" {
   name = "${local.prefix}-task-role"
 
@@ -169,6 +183,12 @@ resource "aws_iam_role_policy" "ecs_task_s3" {
   })
 }
 
+# ── Secrets ───────────────────────────────────────────────────────────────────
+
+resource "aws_secretsmanager_secret" "cf_api_token" {
+  name = "${local.prefix}-cf-api-token"
+}
+
 # ── Task definition ───────────────────────────────────────────────────────────
 
 resource "aws_ecs_task_definition" "valheim" {
@@ -196,13 +216,19 @@ resource "aws_ecs_task_definition" "valheim" {
     ]
 
     environment = [
-      { name = "USER",        value = "steam" },
-      { name = "HOMEDIR",     value = "/home/steam" },
-      { name = "STEAMCMDDIR", value = "/usr/games/steamcmd" },
-      { name = "STEAMAPPID",  value = "896660" },
-      { name = "STEAMAPP",    value = "valheim" },
-      { name = "STEAMAPPDIR", value = "/home/steam/valheim-dedicated" },
-      { name = "S3_BUCKET",   value = aws_s3_bucket.config.bucket }
+      { name = "USER",           value = "steam" },
+      { name = "HOMEDIR",        value = "/home/steam" },
+      { name = "STEAMCMDDIR",    value = "/usr/games/steamcmd" },
+      { name = "STEAMAPPID",     value = "896660" },
+      { name = "STEAMAPP",       value = "valheim" },
+      { name = "STEAMAPPDIR",    value = "/home/steam/valheim-dedicated" },
+      { name = "S3_BUCKET",      value = aws_s3_bucket.config.bucket },
+      { name = "CF_ZONE_ID", value = var.cf_zone_id },
+      { name = "CF_DOMAIN",  value = var.cf_domain }
+    ]
+
+    secrets = [
+      { name = "CF_API_TOKEN", valueFrom = aws_secretsmanager_secret.cf_api_token.arn }
     ]
 
     logConfiguration = {

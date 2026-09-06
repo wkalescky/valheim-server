@@ -2,7 +2,7 @@ FROM ghcr.io/wkalescky/valheim-base:latest
 
 USER root
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends awscli \
+    && apt-get install -y --no-install-recommends awscli jq \
     && rm -rf /var/lib/apt/lists/* \
     && chown -R steam:steam /home/steam/.config
 

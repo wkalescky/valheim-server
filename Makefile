@@ -6,11 +6,12 @@ GIT_SHA    := $(shell git rev-parse --short HEAD)
 
 COMPOSE   = sudo docker compose -f docker/base/docker-compose.yml
 TF_DIR    = terraform
-TERRAFORM = terraform -chdir=$(TF_DIR)
+TF_CREDS  := $(shell aws configure export-credentials --format env-no-export 2>/dev/null)
+TERRAFORM  = env $(TF_CREDS) terraform -chdir=$(TF_DIR)
 
 export AWS_DEFAULT_REGION = us-west-2
 
-.PHONY: build build-base build-ecs deploy plan start ghcr-login runit
+.PHONY: build build-base build-ecs deploy apply plan start ghcr-login runit
 
 build: build-base build-ecs
 
@@ -38,6 +39,9 @@ build-ecs:
 		docker/ecs
 
 deploy: build
+	$(TERRAFORM) apply
+
+apply:
 	$(TERRAFORM) apply
 
 plan:
