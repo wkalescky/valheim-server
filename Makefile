@@ -2,7 +2,7 @@ GHCR_USER   = wkalescky
 ECS_IMAGE   = ghcr.io/$(GHCR_USER)/valheim-server
 GIT_SHA    := $(shell git rev-parse --short HEAD)
 
-COMPOSE   = sudo docker compose -f docker/ecs/docker-compose.yml
+COMPOSE   = sudo docker compose -f docker/valheim-server/docker-compose.yml
 TF_DIR    = terraform
 TF_CREDS  := $(shell aws configure export-credentials --format env-no-export 2>/dev/null)
 TERRAFORM  = env $(TF_CREDS) terraform -chdir=$(TF_DIR)
@@ -17,8 +17,8 @@ build:
 		--push \
 		-t $(ECS_IMAGE):latest \
 		-t $(ECS_IMAGE):$(GIT_SHA) \
-		-f docker/ecs/Dockerfile \
-		docker/ecs
+		-f docker/valheim-server/Dockerfile \
+		docker/valheim-server
 
 runit:
 	$(COMPOSE) down --remove-orphans
