@@ -6,10 +6,18 @@ output "public_subnet_id" {
   value = aws_subnet.public.id
 }
 
-output "config_bucket" {
-  value = aws_s3_bucket.config.bucket
+output "ecs_security_group_id" {
+  value = aws_security_group.ecs_task.id
 }
 
-output "task_definition_arn" {
-  value = aws_ecs_task_definition.valheim.arn
+output "ecs_cluster" {
+  value = aws_ecs_cluster.cluster.name
+}
+
+output "ecs_task_definition" {
+  value = aws_ecs_task_definition.valheim.family
+}
+
+output "config_bucket" {
+  value = aws_s3_bucket.config.bucket
 }

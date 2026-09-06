@@ -65,6 +65,28 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+# ── Security group ────────────────────────────────────────────────────────────
+
+resource "aws_security_group" "ecs_task" {
+  name        = "${local.prefix}-task"
+  description = "Valheim game ports"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port   = 2456
+    to_port     = 2458
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 # ── S3 (world saves + server config) ─────────────────────────────────────────
 
 resource "aws_s3_bucket" "config" {
@@ -165,7 +187,7 @@ resource "aws_ecs_task_definition" "valheim" {
 
   container_definitions = jsonencode([{
     name  = "valheim"
-    image = "ghcr.io/wkalescky/valheim-base:latest"
+    image = "ghcr.io/wkalescky/valheim-server:latest"
 
     portMappings = [
       { containerPort = 2456, protocol = "udp" },
