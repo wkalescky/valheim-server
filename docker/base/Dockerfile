@@ -36,8 +36,9 @@ RUN set -x \
   && "$STEAMCMDDIR" +quit
 
 RUN set -x \
-	"$STEAMCMDDIR" +force_install_dir "$STEAMAPPDIR" +login anonymous +app_update "$STEAMAPPID" validate +quit \
-COPY --chmod=755 start_server.sh ${STEAMAPPDIR}/start_server.sh
+  && "$STEAMCMDDIR" +login anonymous +force_install_dir "$STEAMAPPDIR" +app_update "$STEAMAPPID" validate +quit
+
+COPY --chown=steam:steam --chmod=755 start_server.sh ${STEAMAPPDIR}/start_server.sh
 
 # EXPOSE 2456/tcp \
 # 	2456/udp \

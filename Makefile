@@ -1,24 +1,62 @@
-IMAGE_NAME = valheim-base
-TAG = latest
+IMAGE_NAME  = valheim-base
+GHCR_USER   = wkalescky
+BASE_IMAGE  = ghcr.io/$(GHCR_USER)/valheim-base
+ECS_IMAGE   = ghcr.io/$(GHCR_USER)/valheim-server
+GIT_SHA    := $(shell git rev-parse --short HEAD)
 
-COMPOSE = sudo docker compose -f docker/base/docker-compose.yml
+COMPOSE   = sudo docker compose -f docker/base/docker-compose.yml
+TF_DIR    = terraform
+TF_CREDS  := $(shell aws configure export-credentials --format env-no-export 2>/dev/null)
+TERRAFORM  = env $(TF_CREDS) terraform -chdir=$(TF_DIR)
 
-build:
-	$(COMPOSE) build
+export AWS_DEFAULT_REGION = us-west-2
+
+.PHONY: build build-base build-ecs deploy apply plan start ghcr-login runit
+
+build: build-base build-ecs
 
 runit:
 	$(COMPOSE) up -d
 	$(COMPOSE) exec valheim /bin/bash
 
-# xbuild:
-# 	sudo docker buildx build -t $(IMAGE_NAME):$(TAG) --platform linux/amd64 .
+build-base:
+	sudo docker buildx build \
+		--no-cache \
+		--platform linux/amd64 \
+		--push \
+		-t $(BASE_IMAGE):latest \
+		-t $(BASE_IMAGE):$(GIT_SHA) \
+		-f docker/base/Dockerfile \
+		docker/base
 
-# interactive:
-# 	sudo docker run \
-# 		-p 2456/tcp \
-# 		-p 2456/udp \
-# 		-p 2457/udp \
-# 		-it --user steam --platform linux/amd64 $(IMAGE_NAME):$(TAG) /bin/bash
+build-ecs:
+	sudo docker buildx build \
+		--platform linux/amd64 \
+		--push \
+		-t $(ECS_IMAGE):latest \
+		-t $(ECS_IMAGE):$(GIT_SHA) \
+		-f docker/ecs/Dockerfile \
+		docker/ecs
 
-# arm:
-# 	sudo docker run -it --user steam --platform linux/amd64 -e CPU_MHZ=2500 $(IMAGE_NAME):$(TAG) /bin/bash
+deploy: build
+	$(TERRAFORM) apply
+
+apply:
+	$(TERRAFORM) apply
+
+plan:
+	$(TERRAFORM) plan
+
+start:
+ifndef WORLD
+	$(error WORLD is required — usage: make start WORLD=dedicated)
+endif
+	$(eval SUBNET  := $(shell $(TERRAFORM) output -raw public_subnet_id))
+	$(eval SG      := $(shell $(TERRAFORM) output -raw ecs_security_group_id))
+	$(eval CLUSTER := $(shell $(TERRAFORM) output -raw ecs_cluster))
+	$(eval TASKDEF := $(shell $(TERRAFORM) output -raw ecs_task_definition))
+	SUBNET=$(SUBNET) SG=$(SG) CLUSTER=$(CLUSTER) TASKDEF=$(TASKDEF) WORLD=$(WORLD) \
+	  bash scripts/start.sh
+
+ghcr-login:
+	gh auth token | sudo docker login ghcr.io -u $(GHCR_USER) --password-stdin
