@@ -1,9 +1,0 @@
-services:
-  valheim:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: valheim-server
-    tty: true
-    ports:
-      - "2456-2458:2456-2458/udp"
