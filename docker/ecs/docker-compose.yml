@@ -1,0 +1,19 @@
+services:
+  valheim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: valheim-server
+    tty: true
+    env_file:
+      - path: ../../.env
+        required: false
+    environment:
+      S3_BUCKET: ${S3_BUCKET:-}
+      WORLD: ${WORLD:-}
+      CF_ZONE_ID: ${CF_ZONE_ID:-}
+      CF_DOMAIN: ${CF_DOMAIN:-}
+      CF_API_TOKEN: ${CF_API_TOKEN:-}
+      SERVER_PASSWORD: ${SERVER_PASSWORD:-}
+    ports:
+      - "2456-2458:2456-2458/udp"

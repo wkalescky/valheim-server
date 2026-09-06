@@ -102,6 +102,26 @@ resource "aws_s3_bucket_public_access_block" "config" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_lifecycle_configuration" "config" {
+  bucket = aws_s3_bucket.config.id
+
+  rule {
+    id     = "expire-backups"
+    status = "Enabled"
+
+    filter {
+      tag {
+        key   = "backup"
+        value = "true"
+      }
+    }
+
+    expiration {
+      days = 30
+    }
+  }
+}
+
 # ── Logging ───────────────────────────────────────────────────────────────────
 
 resource "aws_cloudwatch_log_group" "valheim" {
@@ -163,7 +183,7 @@ resource "aws_iam_role" "ecs_task" {
 }
 
 resource "aws_iam_role_policy" "ecs_task_s3" {
-  name = "s3-config-read"
+  name = "s3-config-access"
   role = aws_iam_role.ecs_task.id
 
   policy = jsonencode({
@@ -171,7 +191,7 @@ resource "aws_iam_role_policy" "ecs_task_s3" {
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["s3:GetObject"]
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:PutObjectTagging"]
         Resource = "${aws_s3_bucket.config.arn}/*"
       },
       {
@@ -223,8 +243,9 @@ resource "aws_ecs_task_definition" "valheim" {
       { name = "STEAMAPP",       value = "valheim" },
       { name = "STEAMAPPDIR",    value = "/home/steam/valheim-dedicated" },
       { name = "S3_BUCKET",      value = aws_s3_bucket.config.bucket },
-      { name = "CF_ZONE_ID", value = var.cf_zone_id },
-      { name = "CF_DOMAIN",  value = var.cf_domain }
+      { name = "CF_ZONE_ID",              value = var.cf_zone_id },
+      { name = "CF_DOMAIN",               value = var.cf_domain },
+      { name = "IDLE_THRESHOLD_MINUTES",  value = "10" }
     ]
 
     secrets = [
@@ -240,7 +261,8 @@ resource "aws_ecs_task_definition" "valheim" {
       }
     }
 
-    essential = true
+    stopTimeout = 120
+    essential   = true
   }])
 
   # server.env keys: SERVER_NAME, SERVER_PASSWORD, SERVER_WORLD, SERVER_PORT, SERVER_PUBLIC

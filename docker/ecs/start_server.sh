@@ -6,7 +6,7 @@ export SteamAppId=892970
 
 echo "Starting server PRESS CTRL-C to exit"
 
-./valheim_server.x86_64 \
+exec ./valheim_server.x86_64 \
   -name "${SERVER_NAME:-My server}" \
   -port "${SERVER_PORT:-2456}" \
   -world "${SERVER_WORLD:-Dedicated}" \

@@ -1,35 +1,17 @@
-IMAGE_NAME  = valheim-base
 GHCR_USER   = wkalescky
-BASE_IMAGE  = ghcr.io/$(GHCR_USER)/valheim-base
 ECS_IMAGE   = ghcr.io/$(GHCR_USER)/valheim-server
 GIT_SHA    := $(shell git rev-parse --short HEAD)
 
-COMPOSE   = sudo docker compose -f docker/base/docker-compose.yml
+COMPOSE   = sudo docker compose -f docker/ecs/docker-compose.yml
 TF_DIR    = terraform
 TF_CREDS  := $(shell aws configure export-credentials --format env-no-export 2>/dev/null)
 TERRAFORM  = env $(TF_CREDS) terraform -chdir=$(TF_DIR)
 
 export AWS_DEFAULT_REGION = us-west-2
 
-.PHONY: build build-base build-ecs deploy apply plan start ghcr-login runit
+.PHONY: build deploy apply plan start ghcr-login runit exec
 
-build: build-base build-ecs
-
-runit:
-	$(COMPOSE) up -d
-	$(COMPOSE) exec valheim /bin/bash
-
-build-base:
-	sudo docker buildx build \
-		--no-cache \
-		--platform linux/amd64 \
-		--push \
-		-t $(BASE_IMAGE):latest \
-		-t $(BASE_IMAGE):$(GIT_SHA) \
-		-f docker/base/Dockerfile \
-		docker/base
-
-build-ecs:
+build:
 	sudo docker buildx build \
 		--platform linux/amd64 \
 		--push \
@@ -37,6 +19,13 @@ build-ecs:
 		-t $(ECS_IMAGE):$(GIT_SHA) \
 		-f docker/ecs/Dockerfile \
 		docker/ecs
+
+runit:
+	$(COMPOSE) down --remove-orphans
+	$(COMPOSE) up -d --build
+
+exec:
+	$(COMPOSE) exec valheim /bin/bash
 
 deploy: build
 	$(TERRAFORM) apply

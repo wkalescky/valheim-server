@@ -31,10 +31,3 @@ for _ in $(seq 1 30); do
   [ -n "${ENI_ID}" ] && [ "${ENI_ID}" != "None" ] && break
   sleep 2
 done
-
-if [ -z "${ENI_ID}" ] || [ "${ENI_ID}" = "None" ]; then
-  echo "Timed out waiting for ENI" >&2
-  exit 1
-fi
-
-echo "Task started (check console for public IP)"
